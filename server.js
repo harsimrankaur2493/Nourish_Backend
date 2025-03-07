@@ -1,5 +1,9 @@
 const express = require('express');
 const app = express();
+const User = require('./models/User');
+const DailyIntake = require('./models/DailyIntake');
+const Vitals = require('./models/Vitals');
+const Food = require('./models/Food');
 require('dotenv').config();
 console.log("Loaded MONGO_URI:", process.env.MONGO_URI); // Debugging
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -25,42 +29,154 @@ app.get('/webhook', (req, res) => {
     }
 });
 
+// app.post('/webhook', async (req, res) => {
+//     console.log("Received Webhook Event:", JSON.stringify(req.body, null, 2));
+
+//     if (req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
+//         const number = req.body.entry[0].changes[0].value.messages[0].from;
+//         const reqq = await axios.post('https://nourish-backend-h78c.onrender.com/get-requests', {
+//           number: number
+//         });
+//         console.log("#########################################");
+//         console.log(reqq.data.requests);
+//         console.log("#########################################");
+//         let history="These are the past seraches of the user (seperated by comma), keep it in mind --> ";
+//         let nn=reqq.data.requests.length;
+//         for(let i=0;i<nn;i++)
+//         {
+//           history=history+reqq.data.requests[i]+", ";
+//         }
+//         const message = `You are a nutritionist specialised at helping people to control their blood sugar level spike. So answer all the queries in the same manner. This is the user detail -->name = ${reqq.data.requests.fullName},  email = ${reqq.data.requests.email},  number = ${reqq.data.requests.number},  password = ${reqq.data.requests.password},city = ${reqq.data.requests.city}, state= ${reqq.data.requests.state},  gender = ${reqq.data.requests.gender},  age = ${reqq.data.requests.age},  height = ${reqq.data.requests.height},  weight = ${reqq.data.requests.weight},  bmi = ${reqq.data.requests.bmi},  diabetes = ${reqq.data.requests.diabetes},  foodAllergies = ${reqq.data.requests.foodAllergies},  bloodPressure = ${reqq.data.requests.bloodPressure},  cholesterolLevels = ${reqq.data.requests.cholesterolLevels},  smokingHabit = ${reqq.data.requests.smokingHabit},  alcoholConsumption = ${reqq.data.requests.alcoholConsumption},  physicalActivity = ${reqq.data.requests.physicalActivity},  currentMedications = ${reqq.data.requests.currentMedications},  medicalHistory = ${reqq.data.requests.medicalHistory}, doctorsNotes = ${reqq.data.requests.doctorsNotes},  emergencyContact = ${reqq.data.requests.emergencyContact}.There is a chance that user has updated their personal info in past queries so consider that too while answering. Do keep in mind the location of the user and recommend food according to location if asked. ${history} ,And Right now answer this query -->${req.body.entry[0].changes[0].value.messages[0].text.body}`;
+//         const message_f=req.body.entry[0].changes[0].value.messages[0].text.body;
+
+//       console.log(message);
+//       console.log("*****");
+
+
+
+//         try {
+//             // Send the message to the /chat API to get food recommendations
+//             const chatResponse = await axios.post("https://nourish-backend-h78c.onrender.com/chat", { message });
+
+//             const recommendedFoods = chatResponse.data; // Get response from model
+            
+//             // Prepare WhatsApp reply
+//             const data = {
+//                 messaging_product: "whatsapp",
+//                 to: `+${number}`,
+//                 text: { body: recommendedFoods } // Send model's response back
+//             };
+
+//             const headers = {
+//                 Authorization: `Bearer ${token}`,
+//                 "Content-Type": "application/json"
+//             };
+
+//             await axios.post(url, data, { headers });
+
+//             try {
+//                 const response = await axios.post('https://nourish-backend-h78c.onrender.com/save-request', {
+//                   number, // Sending username as part of the request body
+//                   message_f,
+//                 });
+//               } catch (error) {
+//                 const errorMessage = { sender: 'bot', text: 'Sorry, there was an error saving the prompt.' };
+//                 setMessages((prevMessages) => [...prevMessages, errorMessage]);
+//               } 
+
+
+//             console.log("Message sent successfully:", recommendedFoods);
+//         } catch (error) {
+//             console.error("Error processing request:", error);
+//         }
+//     } else {
+//         console.log("Invalid webhook data structure.");
+//     }
+
+//     res.sendStatus(200);
+// });
+
 app.post('/webhook', async (req, res) => {
     console.log("Received Webhook Event:", JSON.stringify(req.body, null, 2));
 
     if (req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
         const number = req.body.entry[0].changes[0].value.messages[0].from;
-        const reqq = await axios.post('https://nourish-backend-h78c.onrender.com/get-requests', {
-          number: number
-        });
-        console.log("#########################################");
-        console.log(reqq.data.requests);
-        console.log("#########################################");
-        let history="These are the past seraches of the user (seperated by comma), keep it in mind --> ";
-        let nn=reqq.data.requests.length;
-        for(let i=0;i<nn;i++)
-        {
-          history=history+reqq.data.requests[i]+", ";
-        }
-        const message = `You are a nutritionist specialised at helping people to control their blood sugar level spike. So answer all the queries in the same manner. This is the user detail -->name = ${reqq.data.requests.fullName},  email = ${reqq.data.requests.email},  number = ${reqq.data.requests.number},  password = ${reqq.data.requests.password},city = ${reqq.data.requests.city}, state= ${reqq.data.requests.state},  gender = ${reqq.data.requests.gender},  age = ${reqq.data.requests.age},  height = ${reqq.data.requests.height},  weight = ${reqq.data.requests.weight},  bmi = ${reqq.data.requests.bmi},  diabetes = ${reqq.data.requests.diabetes},  foodAllergies = ${reqq.data.requests.foodAllergies},  bloodPressure = ${reqq.data.requests.bloodPressure},  cholesterolLevels = ${reqq.data.requests.cholesterolLevels},  smokingHabit = ${reqq.data.requests.smokingHabit},  alcoholConsumption = ${reqq.data.requests.alcoholConsumption},  physicalActivity = ${reqq.data.requests.physicalActivity},  currentMedications = ${reqq.data.requests.currentMedications},  medicalHistory = ${reqq.data.requests.medicalHistory}, doctorsNotes = ${reqq.data.requests.doctorsNotes},  emergencyContact = ${reqq.data.requests.emergencyContact}.There is a chance that user has updated their personal info in past queries so consider that too while answering. Do keep in mind the location of the user and recommend food according to location if asked. ${history} ,And Right now answer this query -->${req.body.entry[0].changes[0].value.messages[0].text.body}`;
-        const message_f=req.body.entry[0].changes[0].value.messages[0].text.body;
-
-      console.log(message);
-      console.log("*****");
-
-
-
+        const message_f = req.body.entry[0].changes[0].value.messages[0].text.body;
+        
         try {
-            // Send the message to the /chat API to get food recommendations
-            const chatResponse = await axios.post("https://nourish-backend-h78c.onrender.com/chat", { message });
-
-            const recommendedFoods = chatResponse.data; // Get response from model
+            // Find the user
+            const user = await User.findOne({ number });
             
-            // Prepare WhatsApp reply
+            if (!user) {
+                console.log("User not found for number:", number);
+                res.sendStatus(200);
+                return;
+            }
+            
+            // Get user ID for fetching related data
+            const userId = user._id;
+            
+            // Fetch daily intake for today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const dailyIntake = await DailyIntake.findOne({
+                userId,
+                date: { $gte: today, $lt: tomorrow }
+            });
+            
+            // Fetch past food intake (last 7 days)
+            const pastFoodIntake = await Food.find({
+                userId,
+                createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+            }).sort({ createdAt: -1 }).limit(10);
+            
+            // Fetch latest vitals
+            const latestVitals = await Vitals.findOne({ userId }).sort({ timestamp: -1 });
+            
+            // Format history string as before
+            let history = "These are the past searches of the user (separated by comma), keep it in mind --> ";
+            const nn = user.requests.length;
+            for (let i = 0; i < nn; i++) {
+                history = history + user.requests[i] + ", ";
+            }
+            
+            // Add current daily intake info if available
+            let nutritionContext = "";
+            if (dailyIntake) {
+                nutritionContext = `Current daily intake: calories=${dailyIntake.calories || 0}, protein=${dailyIntake.nutrients?.protein || 0}g, carbs=${dailyIntake.nutrients?.carbs || 0}g, fats=${dailyIntake.nutrients?.fats || 0}g, fiber=${dailyIntake.nutrients?.fiber || 0}g. `;
+            }
+            
+            // Add vitals info if available
+            let vitalsContext = "";
+            if (latestVitals) {
+                vitalsContext = `Latest blood sugar reading: ${latestVitals.sugarReading || "Not available"}. Latest weight: ${latestVitals.weightReading || "Not available"}. `;
+            }
+            
+            // Add recent food info if available
+            let foodContext = "";
+            if (pastFoodIntake && pastFoodIntake.length > 0) {
+                foodContext = "Recent foods consumed: " + pastFoodIntake.map(f => f.food_name).join(", ") + ". ";
+            }
+            
+            // Format message for the existing chatbot, keeping the same format it expects
+            // but adding the enhanced context within that format
+            const message = `You are a nutritionist specialised at helping people to control their blood sugar level spike. So answer all the queries in the same manner. This is the user detail -->name = ${user.fullName},  email = ${user.email},  number = ${user.number},  password = ${user.password},city = ${user.city}, state= ${user.state},  gender = ${user.gender},  age = ${user.age},  height = ${user.height},  weight = ${user.weight},  bmi = ${user.bmi},  diabetes = ${user.diabetes},  foodAllergies = ${user.foodAllergies},  bloodPressure = ${user.bloodPressure},  cholesterolLevels = ${user.cholesterolLevels},  smokingHabit = ${user.smokingHabit},  alcoholConsumption = ${user.alcoholConsumption},  physicalActivity = ${user.physicalActivity || user.activityLevel},  currentMedications = ${user.currentMedications},  medicalHistory = ${user.medicalHistory}, doctorsNotes = ${user.doctorsNotes},  emergencyContact = ${user.emergencyContact}, weightGoal = ${user.weightGoal || "Not specified"}, maintenanceCalories = ${user.maintenanceCalories || "Not calculated"}. ${nutritionContext}${vitalsContext}${foodContext}There is a chance that user has updated their personal info in past queries so consider that too while answering. Do keep in mind the location of the user and recommend food according to location if asked. ${history} ,And Right now answer this query -->${message_f}`;
+
+            console.log("Enhanced context sent to chatbot");
+            console.log("*****");
+
+            // Send to existing chat endpoint
+            const chatResponse = await axios.post("https://nourish-backend-h78c.onrender.com/chat", { message });
+            const recommendedFoods = chatResponse.data;
+            
+            // Prepare and send WhatsApp reply as before
             const data = {
                 messaging_product: "whatsapp",
                 to: `+${number}`,
-                text: { body: recommendedFoods } // Send model's response back
+                text: { body: recommendedFoods }
             };
 
             const headers = {
@@ -70,16 +186,15 @@ app.post('/webhook', async (req, res) => {
 
             await axios.post(url, data, { headers });
 
+            // Save the query to user history
             try {
                 const response = await axios.post('https://nourish-backend-h78c.onrender.com/save-request', {
-                  number, // Sending username as part of the request body
+                  number,
                   message_f,
                 });
-              } catch (error) {
-                const errorMessage = { sender: 'bot', text: 'Sorry, there was an error saving the prompt.' };
-                setMessages((prevMessages) => [...prevMessages, errorMessage]);
-              } 
-
+            } catch (error) {
+                console.error("Error saving prompt:", error);
+            }
 
             console.log("Message sent successfully:", recommendedFoods);
         } catch (error) {
